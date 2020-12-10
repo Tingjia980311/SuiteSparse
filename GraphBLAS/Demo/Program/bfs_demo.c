@@ -57,6 +57,7 @@ int main (int argc, char **argv)
     int nthreads ;
     OK (GxB_Global_Option_get (GxB_GLOBAL_NTHREADS, &nthreads)) ;
     fprintf (stderr, "bfs_demo: nthreads %d\n", nthreads) ;
+    fprintf (stderr, "running ! \n");
 
     //--------------------------------------------------------------------------
     // read a matrix from stdin
@@ -144,7 +145,7 @@ int main (int argc, char **argv)
             v, NULL)) ;
         OK (GrB_Vector_reduce_UINT64 (&nreachable, NULL, GrB_PLUS_MONOID_INT32,
             is_reachable, NULL)) ;
-        OK (GrB_Vector_free (&is_reachable)) ;
+        // OK (GrB_Vector_free (&is_reachable)) ;
         // OK (GrB_Vector_nvals (&nreachable, v)) ;
         printf ("nodes reachable from node %.16g: %.16g out of %.16g\n",
             (double) s, (double) nreachable, (double) n) ;
@@ -197,11 +198,11 @@ int main (int argc, char **argv)
             }
         }
 
-        OK (GrB_Vector_free (&v)) ;
+        // OK (GrB_Vector_free (&v)) ;
     }
 
     // free all workspace, including A, v, and max_monoid if allocated
-    FREE_ALL ;
+    // FREE_ALL ;
 
     //--------------------------------------------------------------------------
     // now break something on purpose and report the error:
@@ -215,16 +216,17 @@ int main (int argc, char **argv)
         GrB_Monoid Lor ;
         info = GrB_Monoid_new_INT32 (&Lor, GrB_LOR, false) ;        
         printf ("\n------------------- this fails:\n%s\n", GrB_error ( )) ;
-        GrB_Monoid_free (&Lor) ;
+        // GrB_Monoid_free (&Lor) ;
 
         // this selects the correct GrB_Monoid_new_BOOL function
         info = GrB_Monoid_new_BOOL (&Lor, GrB_LOR, (bool) false) ;        
         printf ("\n------------------- this is OK: %d (should be"
             " GrB_SUCCESS = %d)\n", info, GrB_SUCCESS) ;
-        GrB_Monoid_free (&Lor) ;
+        // GrB_Monoid_free (&Lor) ;
     }
 
     fprintf (stderr, "\n") ;
     GrB_finalize ( ) ;
 }
+
 

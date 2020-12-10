@@ -56,7 +56,7 @@ GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
     // Since A and u are swapped, in all the matrix multiply kernels
     // fmult(y,x) must be used instead of fmult(x,y).
 
-    info = GB_mxm (
+    info = GB_mxm_gpu (
         (GrB_Matrix) w,     C_replace,      // w and its descriptor
         (GrB_Matrix) M, Mask_comp, Mask_struct, // mask and its descriptor
         accum,                              // for accum (w,t)
@@ -70,4 +70,5 @@ GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
     GB_BURBLE_END ;
     return (info) ;
 }
+
 
