@@ -83,7 +83,7 @@ int main (int argc, char **argv)
         A2 = Abool ;
     }
 
-    for (int method = 0 ; method <= 0 ; method++)
+    for (int method = 0 ; method <= 3 ; method++)
     {
 
         //----------------------------------------------------------------------

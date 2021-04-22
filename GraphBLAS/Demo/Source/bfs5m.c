@@ -76,15 +76,18 @@ GrB_Info bfs5m              // BFS of a graph (using vector assign & reduce)
     //--------------------------------------------------------------------------
 
     bool successor = true ; // true when some successor found
+    int64_t * A_csrRowPtr = NULL;
+    int64_t * A_csrColInd = NULL;
+    bool * A_csrVal = NULL;
     for (int32_t level = 1 ; successor && level <= n ; level++)
-    {
+    {   
 
         // v<q> = level, using vector assign with q as the mask
         GrB_Vector_assign_INT32 (v, q, NULL, level, GrB_ALL, n, NULL) ;
 
         // q<!v> = q ||.&& A ; finds all the unvisited
         // successors from current q, using !v as the mask
-        GrB_vxm (q, v, NULL, GrB_LOR_LAND_SEMIRING_BOOL, q, A, desc) ;
+        GrB_vxm_ (q, v, NULL, GrB_LOR_LAND_SEMIRING_BOOL, q, A, desc, &A_csrRowPtr, &A_csrColInd, &A_csrVal);
 
         // successor = ||(q)
         GrB_Vector_reduce_BOOL (&successor, NULL, GrB_LOR_MONOID_BOOL, q, NULL) ;

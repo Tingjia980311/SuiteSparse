@@ -102,5 +102,3 @@ GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
     GB_BURBLE_END ;
     return (info) ;
 }
-
-
