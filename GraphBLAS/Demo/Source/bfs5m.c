@@ -96,9 +96,10 @@ GrB_Info bfs5m              // BFS of a graph (using vector assign & reduce)
 
     *v_output = v ;         // return result
 
-    GrB_Vector_free (&q) ;
-    GrB_Descriptor_free (&desc) ;
+    // GrB_Vector_free (&q) ;
+    // GrB_Descriptor_free (&desc) ;
 
     return (GrB_SUCCESS) ;
 }
+
 

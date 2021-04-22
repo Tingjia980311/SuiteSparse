@@ -83,7 +83,7 @@ int main (int argc, char **argv)
         A2 = Abool ;
     }
 
-    for (int method = 0 ; method <= 3 ; method++)
+    for (int method = 0 ; method <= 0 ; method++)
     {
 
         //----------------------------------------------------------------------
@@ -94,6 +94,7 @@ int main (int argc, char **argv)
 
         GrB_Index s = 0 ;
         GxB_Global_Option_set (GxB_GLOBAL_NTHREADS, 2) ;
+
 
         switch (method)
         {
@@ -192,8 +193,8 @@ int main (int argc, char **argv)
             {
                 fprintf (stderr, "test failure!\n") ;
                 printf  ("test failure!\n") ;
-                GxB_Vector_fprint (v0, "v0", GxB_COMPLETE, stdout) ;
-                GxB_Vector_fprint (v , "v",  GxB_COMPLETE, stdout) ;
+                // GxB_Vector_fprint (v0, "v0", GxB_COMPLETE, stdout) ;
+                // GxB_Vector_fprint (v , "v",  GxB_COMPLETE, stdout) ;
                 exit (1) ;
             }
         }
@@ -208,22 +209,22 @@ int main (int argc, char **argv)
     // now break something on purpose and report the error:
     //--------------------------------------------------------------------------
 
-    if (n == 4)
-    {
-        // this fails because the compiler selects the GrB_Monoid_new_INT32
-        // function (clang 8.0 on MacOSX, at least), since false is merely the
-        // constant "0".
-        GrB_Monoid Lor ;
-        info = GrB_Monoid_new_INT32 (&Lor, GrB_LOR, false) ;        
-        printf ("\n------------------- this fails:\n%s\n", GrB_error ( )) ;
-        // GrB_Monoid_free (&Lor) ;
+    // if (n == 4)
+    // {
+    //     // this fails because the compiler selects the GrB_Monoid_new_INT32
+    //     // function (clang 8.0 on MacOSX, at least), since false is merely the
+    //     // constant "0".
+    //     GrB_Monoid Lor ;
+    //     info = GrB_Monoid_new_INT32 (&Lor, GrB_LOR, false) ;        
+    //     printf ("\n------------------- this fails:\n%s\n", GrB_error ( )) ;
+    //     // GrB_Monoid_free (&Lor) ;
 
-        // this selects the correct GrB_Monoid_new_BOOL function
-        info = GrB_Monoid_new_BOOL (&Lor, GrB_LOR, (bool) false) ;        
-        printf ("\n------------------- this is OK: %d (should be"
-            " GrB_SUCCESS = %d)\n", info, GrB_SUCCESS) ;
-        // GrB_Monoid_free (&Lor) ;
-    }
+    //     // this selects the correct GrB_Monoid_new_BOOL function
+    //     info = GrB_Monoid_new_BOOL (&Lor, GrB_LOR, (bool) false) ;        
+    //     printf ("\n------------------- this is OK: %d (should be"
+    //         " GrB_SUCCESS = %d)\n", info, GrB_SUCCESS) ;
+    //     // GrB_Monoid_free (&Lor) ;
+    // }
 
     fprintf (stderr, "\n") ;
     GrB_finalize ( ) ;

@@ -40,6 +40,7 @@
 #undef GB_PUBLIC
 #define GB_LIBRARY
 #include "graphblas_demos.h"
+#include <stdio.h>
 
 //------------------------------------------------------------------------------
 // bfs5m: breadth first search using a Boolean semiring
@@ -96,8 +97,9 @@ GrB_Info bfs5m_check        // BFS of a graph (using vector assign & reduce)
 
         // q<!v> = q ||.&& A ; finds all the unvisited
         // successors from current q, using !v as the mask
+        // printf("---\n");
         OK (GrB_vxm (q, v, NULL, GrB_LOR_LAND_SEMIRING_BOOL, q, A, desc)) ;
-
+        // printf("***\n");
         // successor = ||(q)
         OK (GrB_Vector_reduce_BOOL (&successor, NULL, GrB_LOR_MONOID_BOOL,
             q, NULL)) ;
@@ -110,8 +112,9 @@ GrB_Info bfs5m_check        // BFS of a graph (using vector assign & reduce)
     *v_output = v ;         // return result
     v = NULL ;              // set to NULL so FREE_ALL doesn't free it
 
-    FREE_ALL ;              // free all workspace
+    // FREE_ALL ;              // free all workspace
 
     return (GrB_SUCCESS) ;
 }
+
 

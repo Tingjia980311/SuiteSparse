@@ -1,7 +1,7 @@
-__device__ int binarySearch(const int* array,
-                              int        target,
-                              int        begin,
-                              int        end) {
+__device__ int binarySearch(const int64_t* array,
+                              int64_t        target,
+                              int64_t        begin,
+                              int64_t        end) {
   while (begin < end) {
     int mid  = begin + (end - begin) / 2;
     int item = array[mid];
@@ -15,3 +15,4 @@ __device__ int binarySearch(const int* array,
   }
   return -1;
 }
+

@@ -15,6 +15,34 @@
 
 #include "GB_mxm.h"
 
+#define print_int(ptr, n, name) \
+    printf("%s: ", name); \
+    for(int i = 0; i<n; i++) { \
+        printf("\t%d  ", ptr[i]); \
+    } \
+    printf("\n");
+
+#define print_long(ptr, n, name) \
+    printf("%s: ", name); \
+    for(int i = 0; i<n; i++) { \
+        printf("\t%ld  ", ptr[i]); \
+    } \
+    printf("\n");
+
+static void print_info(GrB_Matrix A, char name){
+    char ap[] = "A->p";
+    char ai[] = "A->i";
+    char ax[] = "A->x";
+    ap[0] = name;
+    ai[0] = name;
+    ax[0] = name;
+    print_long(A->p, A->plen+1, ap);
+    print_long(A->i, A->nzmax, ai);
+    bool *Ax = (bool *) (A->x);
+    print_int(Ax, A->nzmax, ax);
+}
+
+
 GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
 (
     GrB_Vector w,                   // input/output vector for results
@@ -55,6 +83,9 @@ GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
     //      u'*A' == A*u
     // Since A and u are swapped, in all the matrix multiply kernels
     // fmult(y,x) must be used instead of fmult(x,y).
+    // print_info(A,'A');
+    // print_info(u, 'u');
+    //print_info(M, 'M');
 
     info = GB_mxm_gpu (
         (GrB_Matrix) w,     C_replace,      // w and its descriptor
@@ -66,6 +97,7 @@ GrB_Info GrB_vxm                    // w'<M> = accum (w, u'*A)
         true,                               // flipxy: fmult(y,x)
         AxB_method,                         // algorithm selector
         Context) ;
+    // print_info(w, 'w')
 
     GB_BURBLE_END ;
     return (info) ;

@@ -135,17 +135,21 @@ GrB_Info bfs6_check         // BFS of a graph (using apply)
         // successor = ||(q)
         GrB_Vector_reduce_BOOL (&successor, NULL, GrB_LOR_MONOID_BOOL,
             q, NULL) ;
+        printf("-----------------\n");
     }
-
+    printf("----------\n");
     // make v sparse
     OK (GrB_Descriptor_set (desc, GrB_MASK, GxB_DEFAULT)) ; // mask not inverted
     OK (GrB_Vector_assign (v, v, NULL, v, GrB_ALL, n, desc)) ;
+    printf("----------\n");
 
     *v_output = v ;         // return result
     v = NULL ;              // set to NULL so FREE_ALL doesn't free it
+    printf("----------\n");
 
-    FREE_ALL ;              // free all workspace
+    // FREE_ALL ;              // free all workspace
 
     return (GrB_SUCCESS) ;
 }
+
 

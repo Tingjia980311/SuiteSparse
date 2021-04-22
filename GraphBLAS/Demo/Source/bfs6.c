@@ -129,10 +129,11 @@ GrB_Info bfs6               // BFS of a graph (using apply)
 
     *v_output = v ;         // return result
 
-    GrB_Vector_free (&q) ;
-    GrB_Descriptor_free (&desc) ;
-    GrB_UnaryOp_free (&apply_level) ;
+    // GrB_Vector_free (&q) ;
+    // GrB_Descriptor_free (&desc) ;
+    // GrB_UnaryOp_free (&apply_level) ;
 
     return (GrB_SUCCESS) ;
 }
+
 

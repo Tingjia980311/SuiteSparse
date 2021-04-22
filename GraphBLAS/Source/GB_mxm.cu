@@ -25,11 +25,11 @@ void print_info(GrB_Matrix A, char name){
     ax[0] = name;
     print_long(A->p, A->plen+1, ap);
     print_long(A->i, A->nzmax, ai);
-    int *Ax = static_cast<int*>(A->x);
+    bool *Ax = static_cast<bool*>(A->x);
     print_int(Ax, A->nzmax, ax);
 }
 
-typedef int TYPE;
+typedef bool TYPE;
 
 extern "C" GrB_Info GB_transpose           // C=A', C=(ctype)A or C=op(A')
 (
@@ -45,6 +45,7 @@ extern "C" GrB_Info GB_transpose           // C=A', C=(ctype)A or C=op(A')
     bool binop_bind1st,             // if true, binop(x,A) else binop(A,y)
     GB_Context Context
  );
+
 
 extern "C" GrB_Info GB_mxm_gpu
 (
@@ -65,125 +66,122 @@ extern "C" GrB_Info GB_mxm_gpu
 )
 
 {
-    // printf("GPU Calling Starting ---------------------------------------- \n");
+    int A_nrows = A->plen;
+    int B_ncols = B->plen;
+    
     GrB_Info info ;
     if (A_transpose) {
         GB_transpose(NULL, NULL, false, A, NULL, NULL, NULL, false, Context); // 是否inplace
     } else if (A->is_csc == true) {
-        // printf("A csc not implemented yet__------------------------------\n");
+        printf("A csc not implemented yet__------------------------------\n");
         return GrB_NO_VALUE;
         // csc => csr 参考 csc2csr的实现
     }
     if (B_transpose) {
 	GB_transpose(NULL, NULL, true, B, NULL, NULL, NULL, false, Context); // 是否inplace
     } else if (B->is_csc == false) {
-        // printf("B csr not implemented yet--------------------------------\n");
+        printf("B csr not implemented yet--------------------------------\n");
         return GrB_NO_VALUE;
         // csr => csc
     }
 
-    // Check type A and B, and broadcast. For simplicity, choose A type currently.
-    // printf("M->nzmax = %ld\n", M->nzmax);
-    // printf("M->plen  = %ld\n", M->plen);
-    
-    // printf("A->nzmax = %ld\n", A->nzmax);
-    // printf("A->plen  = %ld\n", A->plen);
-
-    // printf("B->plen  = %ld\n", B->plen);
-    // printf("B->nzmax = %ld\n", B->nzmax);
-
-    // printf("C->plen  = %ld\n", C->plen);
-    // printf("C->nzmax = %ld\n", C->nzmax);
-    // printf("C->vlen = %ld\n", C->vlen);
-    // printf("C->vdim = %ld\n", C->vdim);
 
     TYPE* C_csrVal;
-    cudaMalloc(&C_csrVal, M->nzmax * sizeof(TYPE));
+    cudaMalloc(&C_csrVal, M->nzmax * A->type->size);
 
-    int* A_csrRowPtr;   // GPU CSR format
-    int* A_csrColInd;
+    int64_t* A_csrRowPtr;   // GPU CSR format
+    int64_t* A_csrColInd;
     TYPE* A_csrVal;        // TODO: Need Correct A TYPE
-    cudaMalloc(&A_csrRowPtr, (A->plen + 1) * sizeof(int));
-    cudaMalloc(&A_csrColInd, A->nzmax * sizeof(int));
-    cudaMalloc(&A_csrVal, A->nzmax * sizeof(TYPE));
-
-    const int A_nrows = A->plen;
+    cudaMalloc(&A_csrRowPtr, (A->plen + 1) * sizeof(int64_t));
+    cudaMalloc(&A_csrColInd, A->nzmax * sizeof(int64_t));
+    cudaMalloc(&A_csrVal, A->nzmax * A->type->size);
 
     // Alloc space in GPU and transfer memory from CPU to GPU
-    cudaMemcpy(A_csrRowPtr, A->p, (A->plen + 1) * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(A_csrColInd, A->i, A->nzmax * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(A_csrVal,    A->x, A->nzmax * sizeof (TYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(A_csrRowPtr, A->p, (A->plen + 1) * sizeof(int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(A_csrColInd, A->i, A->nzmax * sizeof(int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(A_csrVal,    A->x, A->nzmax * A->type->size, cudaMemcpyHostToDevice);
 
-    int* B_cscColPtr;   // GPU CSR format
-    int* B_cscRowInd;
+
+    int64_t* B_cscColPtr;   // GPU CSR format
+    int64_t* B_cscRowInd;
     TYPE* B_cscVal;        // TODO: Need Correct A TYPE
-    cudaMalloc(&B_cscColPtr, (B->plen + 1) * sizeof(int));
-    cudaMalloc(&B_cscRowInd, B->nzmax * sizeof(int));
-    cudaMalloc(&B_cscVal, B->nzmax * sizeof(TYPE));
+    cudaMalloc(&B_cscColPtr, (B->plen + 1) * sizeof(int64_t));
+    cudaMalloc(&B_cscRowInd, B->nzmax * sizeof(int64_t));
+    cudaMalloc(&B_cscVal, B->nzmax * A->type->size);
 
     // Alloc space in GPU and transfer memory from CPU to GPU
-    cudaMemcpy(B_cscColPtr, B->p, (B->plen + 1) * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(B_cscRowInd, B->i, B->nzmax * sizeof (int), cudaMemcpyHostToDevice);
-    cudaMemcpy(B_cscVal,    B->x, B->nzmax * sizeof (TYPE), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_cscColPtr, B->p, (B->plen + 1) * sizeof(int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_cscRowInd, B->i, B->nzmax * sizeof (int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_cscVal,    B->x, B->nzmax * A->type->size, cudaMemcpyHostToDevice);
 
-    int* M_csrRowPtr;       // GPU CSR format
-    int* M_csrColInd;
-    int* M_csrVal;             // TODO: Need Correct A TYPE
+    int64_t* M_csrRowPtr;       // GPU CSR format
+    int64_t* M_csrColInd;
+    int32_t* M_csrVal;             // TODO: Need Correct A TYPE
 
-    cudaMalloc(&M_csrRowPtr, (M->plen + 1) * sizeof(int));
-    cudaMalloc(&M_csrColInd, M->nzmax * sizeof(int));
-    cudaMalloc(&M_csrVal, M->nzmax * sizeof(int));
+    cudaMalloc(&M_csrRowPtr, (M->plen + 1) * sizeof(int64_t));
+    cudaMalloc(&M_csrColInd, M->nzmax * sizeof(int64_t));
+    cudaMalloc(&M_csrVal, M->nzmax * M->type->size);
 
-    cudaMemcpy(M_csrRowPtr, M->p, (M->plen + 1) * sizeof (int), cudaMemcpyHostToDevice);
-    cudaMemcpy(M_csrColInd, M->i, M->nzmax * sizeof (int), cudaMemcpyHostToDevice);
-    cudaMemcpy(M_csrVal,    M->x, M->nzmax * sizeof (int), cudaMemcpyHostToDevice);
-
+    cudaMemcpy(M_csrRowPtr, M->p, (M->plen + 1) * sizeof (int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(M_csrColInd, M->i, M->nzmax * sizeof (int64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(M_csrVal,    M->x, M->nzmax * M->type->size, cudaMemcpyHostToDevice);
     
-    int ifprint = 0;
-    if(ifprint) {
-        print_info(A, 'A');
-        print_info(B, 'B');
-        print_info(M, 'C');
-    }
-    const int nt = 50000;  // GrB_128
-    printf("the number of thread is: %d\n", nt);
-    if (M != NULL) {
-        // printf("Calling Kernel Function\n");
-        // Simple warp-per-row algorithm
-        dim3 NT(nt), NB(1);
+    const int nt = 1;  // GrB_128
+    // printf("the number of thread is: %d\n", nt);
+
+    if (M->is_csc) {
+
+        dim3 NT(nt), NB(ceil(A_nrows/nt));
 
         spgemmMaskedKernel<<<NB, NT>>>(C_csrVal,
             M_csrRowPtr,
             M_csrColInd,
             M_csrVal,
-            semiring->multiply->function, semiring->add->op->function,
-            0,
-            A_csrRowPtr, A_csrColInd, A_csrVal,
-            B_cscColPtr, B_cscRowInd, B_cscVal,
-            A_nrows);
-
-	if(C->x == NULL)
-        C->x = (int*)malloc(M->nzmax * sizeof(int));
-
-	int* temp = (int*)malloc(M->nzmax * sizeof(int));
-        cudaMemcpy(temp, C_csrVal, M->nzmax * sizeof(TYPE), cudaMemcpyDeviceToHost);
+            A_csrRowPtr, 
+            A_csrColInd, 
+            A_csrVal,
+            B_cscColPtr, 
+            B_cscRowInd, 
+            B_cscVal,
+            A_nrows, 
+            B_ncols, 
+            1, 
+            1);
+        TYPE* temp = (TYPE*)malloc(M->nzmax * sizeof(TYPE));
+            cudaMemcpy(temp, C_csrVal, M->nzmax * A->type->size, cudaMemcpyDeviceToHost);
+                    
+        C->p = M->p;
+        C->i = M->i;
+        C->x = (void *) temp;
+        C->nzmax = M->nzmax;
+        C->is_csc = true;
         
-    if(ifprint) {
-        for(int k = 0; k<M->nzmax; k++){
-            printf("%d\t", temp[k]);
-        }
-        printf("\n\n");
+    } else {
+        dim3 NT(nt), NB(ceil(A_nrows/nt));
+        spgemmMaskedKernel<<<NB, NT>>>(C_csrVal,
+            M_csrRowPtr,
+            M_csrColInd,
+            M_csrVal,
+            A_csrRowPtr, 
+            A_csrColInd, 
+            A_csrVal,
+            B_cscColPtr, 
+            B_cscRowInd, 
+            B_cscVal,
+            A_nrows, 
+            B_ncols, 
+            1, 
+            0);
+        TYPE* temp = (TYPE*)malloc(M->nzmax * sizeof(TYPE));
+        cudaMemcpy(temp, C_csrVal, M->nzmax * A->type->size, cudaMemcpyDeviceToHost);
+                    
+        C->p = M->p;
+        C->i = M->i;
+        C->x = (void *) temp;
+        C->nzmax = M->nzmax;
+        C->is_csc = false;
     }
-	
-    C->p = M->p;
-    C->i = M->i;
-    C->x = (void *) temp;
-    C->nzmax = M->nzmax;
-    }
-    // else {
-    //     printf("No Mask computing not complement\n");
-    // }
-    // printf("GPU Calling end\n");
+
     return (info) ;
 }
 
